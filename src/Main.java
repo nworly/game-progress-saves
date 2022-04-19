@@ -1,10 +1,8 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Main {
@@ -29,6 +27,11 @@ public class Main {
             File file = new File(filePath);
             file.delete();
         }
+
+        openZip("/home/nworly/Games/savegames/zipped_saves.zip", "/home/nworly/Games/savegames");
+
+        GameProgress restoredGP = openProgress("/home/nworly/Games/savegames/zipped_save1.dat");
+        System.out.println(restoredGP);
     }
 
     public static void saveGame(String path, GameProgress gameProgress) {
@@ -59,5 +62,39 @@ public class Main {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void openZip(String zipPath, String targetDir) {
+        try (FileInputStream fis = new FileInputStream(zipPath);
+             ZipInputStream zis = new ZipInputStream(fis)) {
+            ZipEntry zipEntry;
+            String name;
+
+            while ((zipEntry = zis.getNextEntry()) != null) {
+                name = targetDir + "/" + zipEntry.getName();
+                FileOutputStream fos = new FileOutputStream(name);
+
+                for (int c = zis.read(); c != -1; c = zis.read()) {
+                    fos.write(c);
+                }
+
+                fos.flush();
+                zis.closeEntry();
+                fos.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static GameProgress openProgress(String filePath) {
+        GameProgress gameProgress = null;
+        try (FileInputStream fis = new FileInputStream(filePath);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            gameProgress = (GameProgress) ois.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return gameProgress;
     }
 }
